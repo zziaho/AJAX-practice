@@ -3,6 +3,8 @@
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
 
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous">
+
 <!DOCTYPE html>
 <html>
 <head>
@@ -45,6 +47,7 @@
 			<li><a href="javascript:fn_ajax('board')">게시판</a></li>
 			<li><a href="javascript:fn_ajax('gallary')">갤러리</a></li>
 			<li><a href="javascript:fn_ajax('movie')">동영상</a></li>
+			<li><a href="javascript:fn_fetchtest()">fetch요청하기</a></li>
 		</ul>
 	</div>
 	<div id="datacontent">
@@ -110,21 +113,40 @@
 		}
 		
 		const fn_ajax=(title)=>{
-			$.ajax({
+			/* $.ajax({
 				url: "${pageContext.request.contextPath}/content.do",
 				data: {"title":title},
 				success:(data)=>{
+					$("#content").html("");
 					switch(title){
 						case "board" : boardPrint(data); break;
 						case "gallary" : gallaryPrint(data); break;
 						case "movie" : moviePrint(data); break;
 					}
-					/* $("div#content").html(data); */	
+					// $("div#content").html("");
 				}
+			}); */
+			
+			// get방식의 ajax통신을 할때 사용
+/* 			$.get("${pageContext.request.contextPath}/content.do?title=" + title,
+					data=>{
+						console.log(data);
+						$("#content").html("");
+						switch(title){
+							case "board" : boardPrint(data); break;
+							case "gallary" : gallaryPrint(data); break;
+							case "movie" : moviePrint(data); break;
+						}
+					}); */
+			
+			// post방식의 ajax통신 할때 사용
+			$.post("${pageContext.request.contextPath}/content.do", {"title":title}, data=>{
+				console.log(data);
 			});
 		}
 		
 		const boardPrint=(data)=>{
+			console.log(data);
 			const table = $("<table>").addClass("table"); // 이거는 부트스트랩 그거 script 주소 가져와서 해야하는데 귀찮아서 안해서 적용 안됩니다 ㅎ 머쓱~
 			const header = $("<tr>");
 			const headerContent = "<th>제목</th><th>내용</th><th>작성자</th>"
@@ -141,9 +163,61 @@
 			});
 			$("#content").append(table);
 		}
+		
 		const gallaryPrint=(data)=>{
+			console.log(data);
 			data.forEach((v, i)=>{
-				console.log(v);
+				let imgContainer =  $("<div>").css({
+					display: "flex",
+					justifyContent: "center",
+					flexDirection: "column"
+				});
+				let title = $("<h2>").html(v["title"]);
+				let img = $("<img>").attr({
+					width: "200px",
+					height: "200px",
+					src: v["path"]
+				});
+				let content = $("<h4>").html(v["content"]);
+				imgContainer.append(title).append(img).append(content);
+				$("#content").css({
+					display: "flex",
+					justifyContent: "space-evenly"
+				}).append(imgContainer);
+			});
+		}
+		
+		// 5초에 한번씩 자동으로 갱신되는~(데이터를 5초마다 받아옴)
+/* 		$(()=>{
+			setInterval(() => {
+				$.get("${pageContext.request.contextPath}/data.do", data=>{
+					console.log(data);
+				});
+			}, 5000);
+				
+			}); */
+			
+			
+		// fetch함수 -> 비동기요청을 할 수 있는 함수
+		// fetch(요청주소, {요청설정 옵션(header, body)에 들어가는 내용})
+		// .then(response=>{return response.json()})
+		// .then(data=>{처리로직});
+		const fn_fetchtest=()=>{
+			/* fetch("/ajax/content.do?title=board") */
+			fetch("/content.do", {
+				method: "post",
+				header: {
+					"Content-Type": "application/json"
+				},
+				body: JSON.stringify({title:"gallary"})
+			})
+			.then(response=>{ // 요청주소가 반환해주는 값이 response에 들어간다
+				console.log(response); // 응답결과에 대한 모든 값(응답header, 응답body 전부 있음)
+				return response.json(); // 얘가 return해준게 data로 들어간다
+			}).then(data=>{ // return response.json(); 얘가 data로 들어감
+				// success 로직 구현과 동일
+				console.log(data);
+				/* boardPrint(data); */
 			});
 		}
 		
